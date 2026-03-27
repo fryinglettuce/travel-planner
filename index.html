@@ -146,26 +146,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helve
 .btn-export { display: block; width: 100%; padding: 12px; margin-top: 10px; background: #2ecc71; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
 
 /* --- PDF 打印适配 --- */
-@media print {
-    body { background: #fff; padding: 0; }
-    .container { box-shadow: none; max-width: 100%; padding: 0; }
-    .tabs-wrapper, .btn-delete-tab, .node-controls, .btn-add, .btn-export, .btn-import, .btn-save-local, .drag-handle, .tab-drag-handle { display: none !important; }
-    [contenteditable="true"]:hover, .time-input:hover { background-color: transparent; box-shadow: none; }
-    .tab-content { display: block !important; page-break-before: always; } 
-    .tab-content:first-child { page-break-before: auto; }
-    .time-col { padding-right: 5px; }
-    
-    /* 打印时去除给按钮预留的底部空白 */
-    .event.sightseeing .content-col { box-shadow: none; border-color: #ccc; padding-bottom: 15px; }
-    .event.transit .content-col { padding-bottom: 10px; }
-    .desc a { color: #333; text-decoration: none; }
-    .time-input::-webkit-calendar-picker-indicator { display: none; }
-    
-    /* 修正打印时的定位 */
-    .event::before { left: 104px; }
-    .event.sightseeing .event-icon { left: 99px; }
-    .event.transit .event-icon { left: 95px; }
-}
+        @media print {
+            body { background: #fff; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .tabs-wrapper, .btn-delete-tab, .node-controls, .btn-add, .btn-export, .btn-import, .btn-save-local, .drag-handle, .tab-drag-handle { display: none !important; }
+            [contenteditable="true"]:hover, .time-input:hover { background-color: transparent; box-shadow: none; }
+            .tab-content { display: block !important; page-break-before: always; } 
+            .tab-content:first-child { page-break-before: auto; }
+            
+            /* 去除网页版特意为按钮预留的底部空白 */
+            .event.sightseeing .content-col { box-shadow: none; border-color: #ccc; padding-bottom: 15px; }
+            .event.transit .content-col { padding-bottom: 10px; }
+            .desc a { color: #333; text-decoration: none; }
+            
+            /* 隐藏原生 input 的选择器小图标 */
+            .time-input::-webkit-calendar-picker-indicator { display: none; }
+            
+            /* 🌟 核心修复：精准扣除隐藏拖拽手柄(30px)后的偏移量 */
+            .event::before { left: 94px; } /* 原 124px - 30px */
+            .event.sightseeing .event-icon { left: 89px; } /* 原 119px - 30px */
+            .event.transit .event-icon { left: 85px; } /* 原 115px - 30px */
+        }
     </style>
 </head>
 <body>
