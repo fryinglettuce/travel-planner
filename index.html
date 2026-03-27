@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北陆特种兵行程单 - 富文本进阶版</title>
+    <style>
+        /* --- 基础与全局样式 --- */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px 10px; }
+        .container { max-width: 650px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; }
+        
+        /* --- 顶部选项卡 Wrapper --- */
+        .tabs-wrapper { display: flex; align-items: flex-end; border-bottom: 2px solid #ecf0f1; margin-bottom: 30px; }
+        .tabs-nav { flex: 1; display: flex; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; align-items: center; gap: 4px; scroll-behavior: smooth; }
+        .tabs-nav::-webkit-scrollbar { display: none; }
+        
+        /* 选项卡按钮 */
+        .tab-btn { flex-shrink: 0; display: flex; align-items: center; gap: 5px; background: #f8fafc; border: 1px solid #e0e6ed; border-bottom: none; color: #7f8c8d; padding: 8px 12px; border-radius: 8px 8px 0 0; transition: all 0.2s; position: relative; }
+        .tab-btn.active { color: #3498db; background-color: #f0f8ff; border: 1px solid #3498db; border-bottom: 3px solid #3498db; margin-bottom: -3px; }
+        .tab-btn.dragging { opacity: 0.5; background: #e1effe; }
+        
+        .tab-drag-handle { cursor: grab; color: #bdc3c7; user-select: none; font-size: 1.1rem; padding: 0 2px; }
+        .tab-drag-handle:active { cursor: grabbing; color: #3498db; }
+        .tab-text { font-size: 1.1rem; font-weight: bold; min-width: 80px; max-width: 200px; outline: none; padding: 2px 4px; cursor: text; user-select: text; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* 聚焦时展开标题 */
+        .tab-text:focus { white-space: normal; overflow: visible; text-overflow: clip; position: relative; z-index: 20; background: #fff; box-shadow: 0 0 0 2px #3498db; border-radius: 4px; }
+        
+        .btn-add-tab { flex-shrink: 0; background: none; border: none; font-size: 1.1rem; font-weight: bold; color: #3498db; padding: 8px 10px; margin-bottom: 3px; cursor: pointer; border-radius: 8px; margin-left: 5px;}
+        .btn-add-tab:hover { background-color: #e1effe; }
+
+        .tab-content { display: none; position: relative; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-delete-tab { position: absolute; right: 0; top: -15px; background: #fee2e2; color: #ef4444; border: 1px solid #f87171; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; z-index: 10; }
+        .btn-delete-tab:hover { background: #fca5a5; }
+
+        /* --- 时间轴主干 --- */
+        .timeline { position: relative; margin: 0; padding: 0; list-style: none; }
+        .timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 100px; width: 2px; background: #e0e6ed; }
+
+        /* --- 通用节点样式 --- */
+        .event { display: flex; position: relative; margin-bottom: 20px; align-items: stretch; transition: border 0.2s; background: #fff;}
+        .event.dragging { opacity: 0.4; border: 2px dashed #3498db; border-radius: 8px; }
+        
+        .drag-handle { width: 30px; display: flex; align-items: center; justify-content: center; color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; }
+        .drag-handle:active { cursor: grabbing; color: #3498db;}
+
+        .time-col { width: 70px; flex-shrink: 0; text-align: right; padding-right: 25px; display: flex; flex-direction: column; justify-content: center; }
+        .time-text { font-family: "Courier New", Courier, monospace; font-size: 1.1rem; font-weight: bold; color: #2c3e50; line-height: 1.3; outline: none; }
+        .time-sep { font-size: 0.8rem; color: #95a5a6; margin: 2px 0; } 
+
+        /* --- 🌟 富文本编辑交互样式修正 --- */
+        [contenteditable="true"] { outline: none; transition: background 0.2s; }
+        [contenteditable="true"]:hover { background-color: #fffacd; border-radius: 4px; box-shadow: 0 0 0 2px #ffe066; }
+        [contenteditable="true"]:focus { background-color: #fff; box-shadow: 0 0 0 2px #3498db; border-radius: 4px; }
+        
+        /* 说明中的图片和超链接样式 */
+        .desc a { color: #3498db; text-decoration: underline; cursor: pointer; }
+        .desc img { max-width: 100%; height: auto; border-radius: 6px; margin-top: 10px; display: block; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        
+        /* 增加详情区域的最小高度，防止插入图片后按钮重叠 */
+        .content-col { min-height: 60px; }
+
+        .node-controls { position: absolute; right: 10px; top: 10px; opacity: 0; transition: opacity 0.2s; display: flex; gap: 5px; z-index: 10; background: rgba(255,255,255,0.9); padding: 2px; border-radius: 4px;}
+        .event:hover .node-controls { opacity: 1; }
+        .btn-ctrl { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; color: #555; display: flex; align-items: center; justify-content: center;}
+        .btn-ctrl:hover { background: #f0f0f0; }
+        .btn-ctrl.delete:hover { background: #fee2e2; color: #ef4444; border-color: #f87171; }
+
+        /* --- 游览型 vs 交通型 --- */
+        .event.sightseeing .event-icon { position: absolute; left: 94px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; border-radius: 50%; background: #3498db; border: 3px solid #fff; box-shadow: 0 0 0 2px #3498db; z-index: 1; }
+        .event.sightseeing .content-col { flex-grow: 1; background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e0e6ed; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; padding-top: 35px;} /* 腾出控件空间 */
+        .event.sightseeing .title { margin: 0 0 8px 0; font-size: 1.15rem; font-weight: bold; color: #2c3e50; outline: none; }
+        .event.sightseeing .desc { margin: 0; font-size: 0.95rem; color: #555; line-height: 1.5; outline: none; }
+
+        .event.transit { margin-bottom: 10px; margin-top: -5px; } 
+        .event.transit .event-icon { position: absolute; left: 91px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; background: #fff; font-size: 1rem; line-height: 20px; text-align: center; z-index: 1; }
+        .event.transit .content-col { flex-grow: 1; padding: 10px 15px; background: transparent; border-left: 3px dashed #bdc3c7; margin-left: -2px; position: relative; padding-top: 35px;} /* 腾出控件空间 */
+        .event.transit .title { margin: 0; font-size: 1rem; font-weight: bold; color: #34495e; outline: none; }
+        .event.transit .desc { margin: 4px 0 0 0; font-size: 0.85rem; color: #7f8c8d; outline: none; }
+
+        /* --- 底部按钮组 --- */
+        .btn-add { display: block; width: 100%; padding: 15px; margin-top: 15px; background: transparent; border: 2px dashed #bdc3c7; color: #7f8c8d; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
+        .btn-add:hover { border-color: #3498db; color: #3498db; background: #f0f8ff; }
+        .btn-save-local { display: block; width: 100%; padding: 12px; margin-top: 30px; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        
+        .btn-import { display: block; width: 100%; padding: 12px; margin-top: 10px; background: #f39c12; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+        .btn-import:hover { background: #e67e22; }
+
+        .btn-export { display: block; width: 100%; padding: 12px; margin-top: 10px; background: #2ecc71; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
+
+        /* --- PDF 打印适配 --- */
+        @media print {
+            body { background: #fff; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; padding: 0; }
+            .tabs-wrapper, .btn-delete-tab, .node-controls, .btn-add, .btn-export, .btn-import, .btn-save-local, .drag-handle, .tab-drag-handle { display: none !important; }
+            [contenteditable="true"]:hover { background-color: transparent; box-shadow: none; }
+            .tab-content { display: block !important; page-break-before: always; } 
+            .tab-content:first-child { page-break-before: auto; }
+            .timeline::before { left: 80px; }
+            .time-col { padding-right: 5px; }
+            .event.sightseeing .content-col { box-shadow: none; border-color: #ccc; padding-top: 15px;}
+            .event.transit .content-col { padding-top: 10px; }
+            .event.sightseeing .event-icon { left: 74px; }
+            .event.transit .event-icon { left: 71px; }
+            .desc a { color: #333; text-decoration: none; } /* 打印时不显示超链接颜色 */
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="tabs-wrapper">
+        <div class="tabs-nav" id="tabsContainer">
+            <div class="tab-btn active" data-target="day1">
+                <div class="tab-drag-handle" draggable="true" title="按住拖拽排序">⋮⋮</div>
+                <span class="tab-text" contenteditable="true">📅 点击输入日期标题</span>
+            </div>
+        </div>
+        <button class="btn-add-tab" onclick="addNewTab()" title="添加新一天">➕ 新增</button>
+    </div>
+
+    <div id="contentsContainer">
+        <div id="day1" class="tab-content active">
+            <button class="btn-delete-tab" onclick="deleteTab('day1')">🗑️ 删除此天</button>
+            <ul class="timeline">
+            </ul>
+            <button class="btn-add" onclick="addNode(this)">➕ 添加行程节点</button>
+        </div>
+    </div>
+
+    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importFromJson(event)">
+
+    <button class="btn-save-local" id="manualSaveBtn" onclick="manualSave()">💾 手动保存到缓存 (已开启自动静默保存)</button>
+    <button class="btn-import" onclick="document.getElementById('importFile').click()">📥 导入本地数据 (跨设备同步用)</button>
+    <button class="btn-export" onclick="exportToJson()">📤 导出完整数据 (备份与分享)</button>
+</div>
+
+<script>
+    // 🌟 核心升级：更换 v6 密钥，支持 innerHTML 数据结构
+    const STORAGE_KEY_TABS = 'itineraryTabs_v6';
+    const STORAGE_KEY_CONTENTS = 'itineraryContents_v6';
+
+    // ==========================================
+    // 0. 全局拖拽逻辑
+    // ==========================================
+    let dragSrcEl = null;
+    let dragType = null; 
+
+    document.addEventListener('dragstart', function(e) {
+        if (e.target.classList.contains('drag-handle')) {
+            dragSrcEl = e.target.closest('.event');
+            dragType = 'event';
+            dragSrcEl.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        } else if (e.target.classList.contains('tab-drag-handle')) {
+            dragSrcEl = e.target.closest('.tab-btn');
+            dragType = 'tab';
+            dragSrcEl.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+    });
+
+    document.addEventListener('dragend', function(e) {
+        if (dragSrcEl) {
+            dragSrcEl.classList.remove('dragging');
+            dragSrcEl = null; dragType = null;
+            saveToLocal();
+        }
+    });
+
+    document.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        if (!dragSrcEl) return;
+
+        if (dragType === 'event') {
+            const timeline = e.target.closest('.timeline');
+            if (timeline) {
+                const afterElement = getDragAfterElement(timeline, e.clientY);
+                if (afterElement == null) timeline.appendChild(dragSrcEl);
+                else timeline.insertBefore(dragSrcEl, afterElement);
+            }
+        } else if (dragType === 'tab') {
+            const tabsContainer = e.target.closest('.tabs-nav');
+            if (tabsContainer) {
+                const afterElement = getDragAfterTab(tabsContainer, e.clientX);
+                if (afterElement == null) tabsContainer.appendChild(dragSrcEl);
+                else tabsContainer.insertBefore(dragSrcEl, afterElement);
+                syncTabContentOrder();
+            }
+        }
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.event:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+            else return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function getDragAfterTab(container, x) {
+        const draggableElements = [...container.querySelectorAll('.tab-btn:not(.dragging)')];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = x - box.left - box.width / 2;
+            if (offset < 0 && offset > closest.offset) return { offset: offset, element: child };
+            else return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function syncTabContentOrder() {
+        const tabsContainer = document.getElementById('tabsContainer');
+        const contentsContainer = document.getElementById('contentsContainer');
+        tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
+            const targetId = btn.getAttribute('data-target');
+            const contentDiv = document.getElementById(targetId);
+            if (contentDiv) contentsContainer.appendChild(contentDiv);
+        });
+    }
+
+    // ==========================================
+    // 1. 数据持久化与自动保存
+    // ==========================================
+    let saveTimeout;
+
+    function saveToLocal() {
+        const tabsNavHtml = document.getElementById('tabsContainer').innerHTML;
+        const contentsHtml = document.getElementById('contentsContainer').innerHTML;
+        localStorage.setItem(STORAGE_KEY_TABS, tabsNavHtml);
+        localStorage.setItem(STORAGE_KEY_CONTENTS, contentsHtml);
+        
+        const saveBtn = document.getElementById('manualSaveBtn');
+        saveBtn.innerText = "✅ 已保存!";
+        setTimeout(() => { saveBtn.innerText = "💾 手动保存到缓存 (已开启自动静默保存)"; }, 1500);
+    }
+
+    function manualSave() { saveToLocal(); }
+
+    document.addEventListener('input', function(e) {
+        if (e.target.hasAttribute('contenteditable')) {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveToLocal, 800);
+        }
+    });
+
+    window.onload = function() {
+        const savedTabs = localStorage.getItem(STORAGE_KEY_TABS);
+        const savedContents = localStorage.getItem(STORAGE_KEY_CONTENTS);
+        
+        if (savedTabs && savedContents) {
+            document.getElementById('tabsContainer').innerHTML = savedTabs;
+            document.getElementById('contentsContainer').innerHTML = savedContents;
+            if(!document.querySelector('.tab-content.active')) {
+                const firstTabBtn = document.querySelector('.tab-btn');
+                if(firstTabBtn) switchTab(firstTabBtn.getAttribute('data-target'));
+            }
+        }
+    }
+
+    // ==========================================
+    // 2. 标签切换与节点逻辑
+    // ==========================================
+    document.getElementById('tabsContainer').addEventListener('click', function(e) {
+        if (e.target.classList.contains('tab-drag-handle')) return;
+        const tabBtn = e.target.closest('.tab-btn');
+        if (tabBtn) switchTab(tabBtn.getAttribute('data-target'));
+    });
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        const targetBtn = document.querySelector(`.tab-btn[data-target="${tabId}"]`);
+        const targetContent = document.getElementById(tabId);
+        if(targetBtn) targetBtn.classList.add('active');
+        if(targetContent) targetContent.classList.add('active');
+    }
+
+    function addNewTab() {
+        const newId = 'day_' + Date.now(); 
+        const newBtnHTML = `
+        <div class="tab-btn" data-target="${newId}">
+            <div class="tab-drag-handle" draggable="true" title="按住拖拽排序">⋮⋮</div>
+            <span class="tab-text" contenteditable="true">📅 点击输入日期标题</span>
+        </div>`;
+        
+        const tabsContainer = document.getElementById('tabsContainer');
+        tabsContainer.insertAdjacentHTML('beforeend', newBtnHTML);
+
+        const newContentHTML = `
+        <div id="${newId}" class="tab-content">
+            <button class="btn-delete-tab" onclick="deleteTab('${newId}')">🗑️ 删除此天</button>
+            <ul class="timeline"></ul>
+            <button class="btn-add" onclick="addNode(this)">➕ 添加行程节点</button>
+        </div>`;
+        document.getElementById('contentsContainer').insertAdjacentHTML('beforeend', newContentHTML);
+        switchTab(newId);
+        saveToLocal();
+        // 新增标签后，轨道自动滑到最右侧
+        setTimeout(() => { tabsContainer.scrollLeft = tabsContainer.scrollWidth; }, 50);
+    }
+
+    function deleteTab(tabId) {
+        if (document.querySelectorAll('.tab-content').length <= 1) { alert("至少需要保留一天的行程哦！"); return; }
+        if (confirm("确定要彻底删除这一整天的所有行程吗？")) {
+            document.querySelector(`.tab-btn[data-target="${tabId}"]`).remove();
+            document.getElementById(tabId).remove();
+            const firstBtn = document.querySelector('.tab-btn');
+            if (firstBtn) switchTab(firstBtn.getAttribute('data-target'));
+            saveToLocal();
+        }
+    }
+
+    function deleteNode(btn) {
+        if(confirm("确定要删除这个节点吗？")) { btn.closest('.event').remove(); saveToLocal(); }
+    }
+
+    function toggleType(btn) {
+        const eventNode = btn.closest('.event');
+        const iconNode = eventNode.querySelector('.event-icon');
+        if (eventNode.classList.contains('sightseeing')) {
+            eventNode.classList.remove('sightseeing');
+            eventNode.classList.add('transit');
+            iconNode.innerText = "🚌";
+            iconNode.style.background = "#fff";
+        } else {
+            eventNode.classList.remove('transit');
+            eventNode.classList.add('sightseeing');
+            iconNode.innerText = "";
+            iconNode.style.background = "#3498db";
+        }
+        saveToLocal();
+    }
+
+    // 🌟 升级版生成节点 HTML，包含富文本按钮
+    function createNodeHTML(config = {}) {
+        const type = config.type || 'sightseeing';
+        const startTime = config.startTime || '00:00';
+        const endTime = config.endTime || '00:00';
+        const titleHTML = config.titleHTML || '📍 新行程地点';
+        const descHTML = config.descHTML || '点击输入细节...';
+
+        const isTransit = type === 'transit';
+        const iconText = isTransit ? '🚌' : '';
+        const bgStyle = isTransit ? 'style="background: #fff;"' : '';
+
+        return `
+        <li class="event ${type}">
+            <div class="drag-handle" draggable="true" title="按住拖拽">⋮⋮</div>
+            <div class="time-col">
+                <span class="time-text" contenteditable="true">${startTime}</span><span class="time-sep">~</span><span class="time-text" contenteditable="true">${endTime}</span>
+            </div>
+            <div class="event-icon" ${bgStyle}>${iconText}</div>
+            <div class="content-col">
+                <div class="node-controls">
+                    <button class="btn-ctrl" onclick="addLinkToNode(this)" title="给选中文字加链接">🔗</button>
+                    <button class="btn-ctrl" onclick="addImageToNode(this)" title="插入图片直链">🖼️</button>
+                    <button class="btn-ctrl" onclick="toggleType(this)" title="切换 游览/交通">🔄</button>
+                    <button class="btn-ctrl delete" onclick="deleteNode(this)" title="删除节点">❌</button>
+                </div>
+                <h3 class="title" contenteditable="true">${titleHTML}</h3>
+                <div class="desc" contenteditable="true">${descHTML}</div> </div>
+        </li>`;
+    }
+
+    function addNode(btnElement) {
+        const timeline = btnElement.previousElementSibling; 
+        timeline.insertAdjacentHTML('beforeend', createNodeHTML());
+        saveToLocal();
+    }
+
+    // ==========================================
+    // 🌟 核心升级：方案三 富文本注入逻辑
+    // ==========================================
+    
+    // 1. 注入超链接
+    function addLinkToNode(btn) {
+        const contentCol = btn.closest('.content-col');
+        const descNode = contentCol.querySelector('.desc');
+        
+        // 获取当前选区的文本
+        const selection = window.getSelection();
+        const selectedText = selection.toString();
+
+        if (selectedText.length === 0) {
+            alert("请先用鼠标选中需要添加链接的文字。");
+            return;
+        }
+
+        const url = prompt("请输入网址 (建议以 http:// 或 https:// 开头):", "https://");
+        
+        if (url && url !== "https://") {
+            // 原生原生 document.execCommand 在某些浏览器已废弃，但在这里是最快的手工注入方式
+            document.execCommand('createLink', false, url);
+            
+            // 为了安全，强制加上 target="_blank"
+            setTimeout(() => {
+                const links = descNode.querySelectorAll('a[href="' + url + '"]');
+                links.forEach(link => link.setAttribute('target', '_blank'));
+                saveToLocal(); // 完成后强制保存一次
+            }, 10);
+        }
+    }
+
+    // 2. 注入图片
+    function addImageToNode(btn) {
+        const contentCol = btn.closest('.content-col');
+        const descNode = contentCol.querySelector('.desc');
+
+        const imageUrl = prompt("请输入图片直链 (例如 https://.../image.jpg):");
+        
+        if (imageUrl) {
+            // 创建图片标签
+            const imgHtml = `<img src="${imageUrl}" alt="行程图片" loading="lazy">`;
+            
+            // 在描述区域的最后追加图片，而不是在光标处注入，这符合我们“补充说明”的逻辑，也更易实现
+            descNode.insertAdjacentHTML('beforeend', imgHtml);
+            
+            // 自动把光标放到描述区域最开头，防止图片把输入框撑高影响焦点
+            descNode.focus();
+            
+            saveToLocal(); // 完成后强制保存一次
+        }
+    }
+
+    // ==========================================
+    // 3. 数据导入与导出 (升级为解析 innerHTML)
+    // ==========================================
+    function exportToJson() {
+        const itineraryData = { trips: [] };
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            const tabId = tab.id;
+            const tabBtnSpan = document.querySelector(`.tab-btn[data-target="${tabId}"] .tab-text`);
+            const dayTitleHTML = tabBtnSpan ? tabBtnSpan.innerHTML.trim() : "未命名"; // 保存 HTML
+            
+            const eventsArray = [];
+            tab.querySelectorAll('.event').forEach(eventNode => {
+                const times = eventNode.querySelectorAll('.time-text');
+                eventsArray.push({
+                    type: eventNode.classList.contains('transit') ? 'transit' : 'sightseeing',
+                    startTime: times[0].innerText.trim(),
+                    endTime: times[1].innerText.trim(),
+                    titleHTML: eventNode.querySelector('.title').innerHTML.trim(), // 保存 HTML
+                    descriptionHTML: eventNode.querySelector('.desc').innerHTML.trim() // 保存 HTML
+                });
+            });
+            itineraryData.trips.push({ dateHTML: dayTitleHTML, events: eventsArray });
+        });
+
+        const blob = new Blob([JSON.stringify(itineraryData, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = "北陆富文本行程备份.json";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    }
+
+    function importFromJson(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = JSON.parse(e.target.result);
+                // 这里可以根据需要调整对旧格式 JSON 的兼容，为了简化我们假设都是 v6 格式
+                if (!data.trips) throw new Error("JSON 文件格式不符合要求");
+
+                const tabsContainer = document.getElementById('tabsContainer');
+                const contentsContainer = document.getElementById('contentsContainer');
+                tabsContainer.innerHTML = '';
+                contentsContainer.innerHTML = '';
+
+                data.trips.forEach((trip, index) => {
+                    const newId = 'day_imported_' + Date.now() + '_' + index; 
+                    
+                    const tabHTML = `
+                    <div class="tab-btn" data-target="${newId}">
+                        <div class="tab-drag-handle" draggable="true" title="按住拖拽排序">⋮⋮</div>
+                        <span class="tab-text" contenteditable="true">${trip.dateHTML || trip.date /* 兼容文本旧格式 */}</span>
+                    </div>`;
+                    tabsContainer.insertAdjacentHTML('beforeend', tabHTML);
+
+                    let eventsHTML = '';
+                    trip.events.forEach(ev => {
+                        // 使用配置对象生成节点 HTML
+                        eventsHTML += createNodeHTML({
+                            type: ev.type,
+                            startTime: ev.startTime,
+                            endTime: ev.endTime,
+                            titleHTML: ev.titleHTML || ev.title, // 兼容文本旧格式
+                            descHTML: ev.descriptionHTML || ev.description // 兼容文本旧格式
+                        });
+                    });
+
+                    const contentHTML = `
+                    <div id="${newId}" class="tab-content">
+                        <button class="btn-delete-tab" onclick="deleteTab('${newId}')">🗑️ 删除此天</button>
+                        <ul class="timeline">${eventsHTML}</ul>
+                        <button class="btn-add" onclick="addNode(this)">➕ 添加行程节点</button>
+                    </div>`;
+                    contentsContainer.insertAdjacentHTML('beforeend', contentHTML);
+                });
+
+                const firstBtn = document.querySelector('.tab-btn');
+                if (firstBtn) switchTab(firstBtn.getAttribute('data-target'));
+
+                saveToLocal();
+                alert("✅ 富文本行程导入成功！");
+                event.target.value = '';
+
+            } catch (err) {
+                alert("导入失败，文件可能格式不正确或不受支持！");
+                console.error(err);
+            }
+        };
+        reader.readAsText(file);
+    }
+</script>
+
+</body>
+</html>
