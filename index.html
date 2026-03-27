@@ -60,19 +60,37 @@
             position: relative; 
         }
         
-        /* 废弃脆弱的 left 绝对坐标，让线死死贴在时间容器的最右侧 */
+        /* --- 🌟 核心重构：分段式相对时间轴系统 --- */
+        
+        /* 1. 行程内部的连线 (只连接同一个节点的起点和终点) */
         .time-col::before {
             content: '';
             position: absolute;
             top: 27px;       
-            bottom: -47px;   
-            right: 4px; /* 永远固定在圆点的中心线上 */
+            bottom: 27px; /* 精准停在当前行程的结束时间点 */  
+            right: 4px;
             z-index: 0;
             border-right-width: 2px;
+            border-right-style: solid; /* 内部线全部改为实线 */
         }
-        .event:last-child .time-col::before { bottom: 27px; }
-        .event.sightseeing .time-col::before { border-right-style: solid; border-right-color: #3498db; }
-        .event.transit .time-col::before { border-right-style: dashed; border-right-color: #bdc3c7; }
+        .event.sightseeing .time-col::before { border-right-color: #3498db; } /* 景点为蓝色实线 */
+        .event.transit .time-col::before { border-right-color: #95a5a6; }   /* 交通为灰色实线 */
+
+        /* 2. 行程之间的连线 (跨越空白，连接下一个节点) */
+        .time-col::after {
+            content: '';
+            position: absolute;
+            top: calc(100% - 27px); /* 从当前行程的结束时间点起步 */
+            bottom: -47px;          /* 跨越 20px 的卡片间距，精确对准下一个节点的顶端 */
+            right: 4px;
+            z-index: 0;
+            border-right: 2px dashed #333; /* 黑色虚线表示行程间的过渡 */
+        }
+        
+        /* 最后一个节点下方不需要再往下连线 */
+        .event:last-child .time-col::after { 
+            display: none; 
+        }
 
         /* 纯 Flexbox 相对布局：输入框在左，圆点在右 */
         .time-input-container { 
