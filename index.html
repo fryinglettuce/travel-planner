@@ -580,6 +580,18 @@
         };
         reader.readAsText(file);
     }
+    // ==========================================
+    // 🌟 修复：允许在编辑模式下直接点击打开超链接
+    // ==========================================
+    document.getElementById('contentsContainer').addEventListener('click', function(e) {
+        // 判断鼠标点中的目标是不是 <a> 标签
+        if (e.target.tagName === 'A') {
+            // 阻止编辑框可能产生的焦点干扰
+            e.preventDefault(); 
+            // 强制在新标签页打开该链接
+            window.open(e.target.href, '_blank');
+        }
+    });
 </script>
 
 </body>
