@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>北陆特种兵行程单 - 双击防误触版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>北陆特种兵行程单 - 终极双击防误触版 v13</title>
     <style>
         /* --- 1. 基础与全局样式 --- */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px 10px; }
@@ -33,32 +33,18 @@
         .timeline { position: relative; margin: 0; padding: 0; list-style: none; }
 
         .event { 
-            display: flex; 
-            position: relative; 
-            margin-bottom: 20px; 
-            align-items: stretch; 
-            transition: border 0.2s; 
-            background: transparent; 
+            display: flex; position: relative; margin-bottom: 20px; align-items: stretch; transition: border 0.2s; background: transparent; 
         }
         .event.dragging { opacity: 0.4; border: 2px dashed #3498db; border-radius: 8px; }
 
         /* --- 2. 完美防爆时间轴布局 --- */
         .drag-handle { 
-            width: 30px; 
-            flex: 0 0 30px; /* 锁死不可压缩 */
-            display: flex; align-items: center; justify-content: center; 
-            color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; 
+            width: 30px; flex: 0 0 30px; display: flex; align-items: center; justify-content: center; color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; 
         }
         .drag-handle:active { cursor: grabbing; color: #3498db;}
 
         .time-col { 
-            flex: 0 0 95px; /* 锁死宽度防挤压 */
-            width: 95px;           
-            padding: 15px 0; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            position: relative; 
+            flex: 0 0 95px; width: 95px; padding: 15px 0; display: flex; flex-direction: column; justify-content: space-between; position: relative; 
         }
 
         .time-col::before {
@@ -88,25 +74,26 @@
         .time-input:focus { background-color: #fff; box-shadow: 0 0 0 2px #3498db; }
         .time-input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; padding: 0; margin-left: 2px;}
 
-        /* --- 3. 🌟 修复归来的视觉交互反馈 --- */
+        /* --- 3. 🌟 强制高优先级的视觉交互反馈 --- */
         .title, .desc, .tab-text { 
             outline: none; 
             transition: all 0.2s; 
             cursor: pointer; 
             min-height: 24px; 
             min-width: 50px;
-            word-wrap: break-word; /* 防止长文本撑爆卡片 */
+            word-wrap: break-word; 
             overflow-wrap: break-word;
+            touch-action: manipulation; /* 🔥 移动端防双击放大，确保双击编辑能流畅触发 */
         }
         
-        /* 恢复：单次悬浮时的淡黄色暗示 */
+        /* 强行覆盖暗示背景，加 !important 防止被其他元素压制 */
         .title:hover, .desc:hover, .tab-text:hover { 
-            background-color: #fffacd; 
+            background-color: #fffacd !important; 
             border-radius: 4px; 
-            box-shadow: 0 0 0 2px #ffe066; 
+            box-shadow: 0 0 0 2px #ffe066 !important; 
         }
         
-        /* 恢复：双击进入编辑模式后的强高亮蓝框 */
+        /* 双击进入编辑模式后的强高亮蓝框 */
         [contenteditable="true"] { 
             background-color: #fff !important; 
             box-shadow: 0 0 0 2px #3498db !important; 
@@ -125,9 +112,9 @@
         .btn-ctrl:hover { background: #f0f0f0; }
         .btn-ctrl.delete:hover { background: #fee2e2; color: #ef4444; border-color: #f87171; }
 
-        /* --- 4. 游览型 vs 交通型 (彻底防爆) --- */
+        /* --- 4. 游览型 vs 交通型 --- */
         .event.sightseeing .content-col { 
-            flex: 1 1 0%; min-width: 0; /* 允许弹性压缩文字 */
+            flex: 1 1 0%; min-width: 0; 
             background: #fff; padding: 15px 15px 45px 20px; border-radius: 8px; border: 1px solid #e0e6ed; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; margin-left: 20px; 
         }
         .event.sightseeing .title { margin: 0 0 8px 0; font-size: 1.15rem; font-weight: bold; color: #2c3e50; }
@@ -175,7 +162,7 @@
         <div class="tabs-nav" id="tabsContainer">
             <div class="tab-btn active" data-target="day1">
                 <div class="tab-drag-handle" draggable="true" title="按住拖拽排序">⋮⋮</div>
-                <span class="tab-text">📅 点击并双击修改标题</span>
+                <span class="tab-text">📅 双击修改标题</span>
             </div>
         </div>
         <button class="btn-add-tab" onclick="addNewTab()" title="添加新一天">➕ 新增</button>
@@ -208,38 +195,37 @@
 </div>
 
 <script>
-    const STORAGE_KEY_TABS = 'itineraryTabs_v12';
-    const STORAGE_KEY_CONTENTS = 'itineraryContents_v12';
+    const STORAGE_KEY_TABS = 'itineraryTabs_v13';
+    const STORAGE_KEY_CONTENTS = 'itineraryContents_v13';
 
     // ==========================================
-    // 🌟 全局双击编辑与焦点防护逻辑
+    // 🌟 全局双击编辑与焦点防护逻辑 (底层加固)
     // ==========================================
     
-    // 1. 数据清洗器：每次加载时，强行洗掉旧数据可能残留的编辑态
     function clearEditableStates() {
         document.querySelectorAll('[contenteditable="true"]').forEach(el => el.removeAttribute('contenteditable'));
     }
 
-    // 2. 双击开启编辑
     document.addEventListener('dblclick', function(e) {
-        if (e.target.classList.contains('title') || e.target.classList.contains('desc') || e.target.classList.contains('tab-text')) {
-            e.target.setAttribute('contenteditable', 'true');
-            e.target.focus();
+        // 🔥 修复点不中的问题：只要点在区域内部(不管是不是点到超链接或粗体字)，都强行往上找到最近的框开启编辑
+        const editTarget = e.target.closest('.title, .desc, .tab-text');
+        
+        if (editTarget) {
+            editTarget.setAttribute('contenteditable', 'true');
+            editTarget.focus();
             
-            // 自动将光标移到文字末尾，提升手感
+            // 自动将光标移到文字末尾
             const selection = window.getSelection();
             const range = document.createRange();
-            range.selectNodeContents(e.target);
+            range.selectNodeContents(editTarget);
             range.collapse(false);
             selection.removeAllRanges();
             selection.addRange(range);
         }
     });
 
-    // 3. 失焦自动关闭编辑 (带按钮防护机制)
     document.addEventListener('focusout', function(e) {
         if (e.target.hasAttribute('contenteditable')) {
-            // 防护机制：如果用户正在点击内部的控制按钮（比如加链接），绝不能立刻关闭编辑，否则命令失效
             if (e.relatedTarget && e.relatedTarget.classList.contains('btn-ctrl')) {
                 return; 
             }
@@ -366,7 +352,7 @@
                 if(firstTabBtn) switchTab(firstTabBtn.getAttribute('data-target'));
             }
         }
-        clearEditableStates(); // 清洗旧缓存
+        clearEditableStates(); 
     }
 
     document.getElementById('tabsContainer').addEventListener('click', function(e) {
@@ -469,7 +455,6 @@
         saveToLocal();
     }
 
-    // 🌟 原生超链接免防点击逻辑
     document.getElementById('contentsContainer').addEventListener('click', function(e) {
         if (e.target.tagName === 'A') {
             e.preventDefault(); 
@@ -490,7 +475,6 @@
 
         const url = prompt("请输入网址 (建议以 http:// 或 https:// 开头):", "https://");
         if (url && url !== "https://") {
-            // 安全注入机制：强行挂载可编辑属性确保命令生效
             const wasEditable = descNode.hasAttribute('contenteditable');
             if(!wasEditable) descNode.setAttribute('contenteditable', 'true');
             
@@ -517,7 +501,6 @@
     }
 
     function getItineraryDataObject() {
-        // 保存前执行一次彻底的洗澡，拔掉所有没关紧的编辑开关
         clearEditableStates();
         
         const itineraryData = { trips: [] };
@@ -658,7 +641,7 @@
                 const firstBtn = document.querySelector('.tab-btn');
                 if (firstBtn) switchTab(firstBtn.getAttribute('data-target'));
 
-                clearEditableStates(); // 清洗下载内容残留
+                clearEditableStates(); 
                 saveToLocal();
                 alert("✅ 成功从云端下载并恢复行程！");
             } else {
@@ -724,7 +707,7 @@
                 const firstBtn = document.querySelector('.tab-btn');
                 if (firstBtn) switchTab(firstBtn.getAttribute('data-target'));
 
-                clearEditableStates(); // 清洗下载内容残留
+                clearEditableStates(); 
                 saveToLocal();
                 alert("✅ 行程导入成功！");
                 event.target.value = '';
