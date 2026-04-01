@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>北陆特种兵行程单 - 双击防误触版</title>
     <style>
-        /* --- 基础与全局样式 --- */
+        /* --- 1. 基础与全局样式 --- */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f5f7fa; color: #333; margin: 0; padding: 20px 10px; }
         .container { max-width: 650px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 20px; }
         
@@ -19,7 +19,6 @@
         
         .tab-drag-handle { cursor: grab; color: #bdc3c7; user-select: none; font-size: 1.1rem; padding: 0 2px; }
         .tab-drag-handle:active { cursor: grabbing; color: #3498db; }
-        .tab-text { font-size: 1.1rem; font-weight: bold; min-width: 80px; max-width: 200px; outline: none; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .btn-add-tab { flex-shrink: 0; background: none; border: none; font-size: 1.1rem; font-weight: bold; color: #3498db; padding: 8px 10px; margin-bottom: 3px; cursor: pointer; border-radius: 8px; margin-left: 5px;}
         .btn-add-tab:hover { background-color: #e1effe; }
@@ -43,102 +42,78 @@
         }
         .event.dragging { opacity: 0.4; border: 2px dashed #3498db; border-radius: 8px; }
 
-        /* 1. 锁死拖拽手柄，赋予绝对不可压缩的刚性 */
+        /* --- 2. 完美防爆时间轴布局 --- */
         .drag-handle { 
             width: 30px; 
-            flex: 0 0 30px; /* 🔥 终极防线：禁止缩小 */
+            flex: 0 0 30px; /* 锁死不可压缩 */
             display: flex; align-items: center; justify-content: center; 
             color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; 
         }
         .drag-handle:active { cursor: grabbing; color: #3498db;}
 
-        /* 2. 重构时间容器：使用右侧大一统锚定 */
         .time-col { 
-            flex: 0 0 95px; /* 🔥 终极防线：锁死 95px 宽度，禁止任何挤压 */
+            flex: 0 0 95px; /* 锁死宽度防挤压 */
             width: 95px;           
-            padding: 15px 0; /* 移除横向 padding，把控制权交给内部 */
+            padding: 15px 0; 
             display: flex; 
             flex-direction: column; 
             justify-content: space-between; 
             position: relative; 
         }
 
-        /* 线条永远死死贴在 time-col 的最右边缘 (right: 0) */
         .time-col::before {
-            content: '';
-            position: absolute;
-            top: 27px;       
-            bottom: 27px; 
-            right: 0; 
-            z-index: 0;
-            border-right: 2px solid; 
+            content: ''; position: absolute; top: 27px; bottom: 27px; right: 0; z-index: 0; border-right: 2px solid; 
         }
         .event.sightseeing .time-col::before { border-right-color: #3498db; } 
         .event.transit .time-col::before { border-right-color: #95a5a6; }   
 
         .time-col::after {
-            content: '';
-            position: absolute;
-            top: calc(100% - 27px); 
-            bottom: -47px;          
-            right: 0;
-            z-index: 0;
-            border-right: 2px dashed #333; 
+            content: ''; position: absolute; top: calc(100% - 27px); bottom: -47px; right: 0; z-index: 0; border-right: 2px dashed #333; 
         }
         .event:last-child .time-col::after { display: none; }
 
-        /* 3. 时间输入框容器：负责留出右侧安全距离 */
         .time-input-container { 
-            display: flex;
-            align-items: center;
-            justify-content: flex-end; 
-            position: relative; 
-            z-index: 2; 
-            padding-right: 15px; /* 文字距离线的安全隔离带 */
+            display: flex; align-items: center; justify-content: flex-end; position: relative; z-index: 2; padding-right: 15px; 
         }
         
-        /* 圆点同样以右边缘为准进行绝对定位 */
         .time-input-container::after {
-            content: '';
-            position: absolute;
-            right: -4px; /* 🔥 精准数学计算：2px的线在右边缘，10px的圆点向右突出4px，两者完美同心重合！ */
-            top: 50%;
-            transform: translateY(-50%);
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #fff; 
-            border: 2px solid #bdc3c7; 
-            box-sizing: border-box;
+            content: ''; position: absolute; right: -4px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: #fff; border: 2px solid #bdc3c7; box-sizing: border-box;
         }
         .event.sightseeing .time-input-container::after { background: #3498db; border-color: #3498db; }
         
         .time-input {
-            width: 75px;
-            height: 24px;   
-            line-height: 24px;
-            border: none;
-            background: transparent;
-            font-family: "Courier New", Courier, monospace;
-            font-size: 1rem;
-            font-weight: bold;
-            color: #2c3e50;
-            outline: none;
-            cursor: pointer;
-            padding: 0;
-            margin: 0;
-            text-align: right;
-            border-radius: 4px;
-            transition: background 0.2s;
+            width: 75px; height: 24px; line-height: 24px; border: none; background: transparent; font-family: "Courier New", Courier, monospace; font-size: 1rem; font-weight: bold; color: #2c3e50; outline: none; cursor: pointer; padding: 0; margin: 0; text-align: right; border-radius: 4px; transition: background 0.2s;
         }
         .time-input:hover { background-color: #fffacd; box-shadow: 0 0 0 2px #ffe066; }
         .time-input:focus { background-color: #fff; box-shadow: 0 0 0 2px #3498db; }
         .time-input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; padding: 0; margin-left: 2px;}
 
-        /* --- 编辑交互样式 --- */
-        [contenteditable="true"] { outline: none; transition: background 0.2s; }
-        [contenteditable="true"]:hover { background-color: #fffacd; border-radius: 4px; box-shadow: 0 0 0 2px #ffe066; }
-        [contenteditable="true"]:focus { background-color: #fff; box-shadow: 0 0 0 2px #3498db; border-radius: 4px; }
+        /* --- 3. 🌟 修复归来的视觉交互反馈 --- */
+        .title, .desc, .tab-text { 
+            outline: none; 
+            transition: all 0.2s; 
+            cursor: pointer; 
+            min-height: 24px; 
+            min-width: 50px;
+            word-wrap: break-word; /* 防止长文本撑爆卡片 */
+            overflow-wrap: break-word;
+        }
+        
+        /* 恢复：单次悬浮时的淡黄色暗示 */
+        .title:hover, .desc:hover, .tab-text:hover { 
+            background-color: #fffacd; 
+            border-radius: 4px; 
+            box-shadow: 0 0 0 2px #ffe066; 
+        }
+        
+        /* 恢复：双击进入编辑模式后的强高亮蓝框 */
+        [contenteditable="true"] { 
+            background-color: #fff !important; 
+            box-shadow: 0 0 0 2px #3498db !important; 
+            border-radius: 4px; 
+            cursor: text !important; 
+        }
+        .tab-text[contenteditable="true"] { white-space: normal; overflow: visible; text-overflow: clip; position: relative; z-index: 20; }
         
         .desc a { color: #3498db; text-decoration: underline; cursor: pointer; }
         .desc img { max-width: 100%; height: auto; border-radius: 6px; margin-top: 10px; display: block; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
@@ -150,47 +125,22 @@
         .btn-ctrl:hover { background: #f0f0f0; }
         .btn-ctrl.delete:hover { background: #fee2e2; color: #ef4444; border-color: #f87171; }
 
-        /* 4. 彻底解决右侧文字撑爆左侧布局的 Bug */
+        /* --- 4. 游览型 vs 交通型 (彻底防爆) --- */
         .event.sightseeing .content-col { 
-            flex: 1 1 0%; /* 允许弹性伸缩 */
-            min-width: 0; /* 🔥 核心防爆机制：允许元素缩得比长文字还小，从而强制文字换行 */
-            background: #fff; 
-            padding: 15px 15px 45px 20px; 
-            border-radius: 8px; 
-            border: 1px solid #e0e6ed; 
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
-            position: relative; 
-            margin-left: 20px; 
+            flex: 1 1 0%; min-width: 0; /* 允许弹性压缩文字 */
+            background: #fff; padding: 15px 15px 45px 20px; border-radius: 8px; border: 1px solid #e0e6ed; box-shadow: 0 2px 8px rgba(0,0,0,0.04); position: relative; margin-left: 20px; 
         }
         .event.sightseeing .title { margin: 0 0 8px 0; font-size: 1.15rem; font-weight: bold; color: #2c3e50; }
         .event.sightseeing .desc { margin: 0; font-size: 0.95rem; color: #555; line-height: 1.5; }
 
         .event.transit .content-col { 
-            flex: 1 1 0%; 
-            min-width: 0; /* 🔥 核心防爆机制 */
-            background: #fafafa; 
-            padding: 12px 15px 40px 15px; 
-            border-radius: 8px; 
-            border: 2px dashed #bdc3c7; 
-            position: relative; 
-            margin-left: 28px; 
-            margin-right: 10px; /* 移除易导致错位的 scale，用 margin 控制视觉缩紧更稳 */
+            flex: 1 1 0%; min-width: 0; 
+            background: #fafafa; padding: 12px 15px 40px 15px; border-radius: 8px; border: 2px dashed #bdc3c7; position: relative; margin-left: 28px; margin-right: 10px;
         }
         .event.transit .title { margin: 0; font-size: 1rem; font-weight: bold; color: #34495e; }
         .event.transit .desc { margin: 4px 0 0 0; font-size: 0.85rem; color: #7f8c8d; }
 
-        /* 5. 强制长文本自动换行，绝不撑开容器 */
-        .title, .desc, .tab-text { 
-            outline: none; 
-            transition: all 0.2s; 
-            cursor: pointer; 
-            min-height: 24px; 
-            min-width: 50px;
-            word-wrap: break-word;      /* 🔥 打破长字符结界 */
-            overflow-wrap: break-word;
-        }
-
-        /* --- 底部按钮组 --- */
+        /* --- 5. 底部按钮组 --- */
         .btn-add { display: block; width: 100%; padding: 15px; margin-top: 15px; background: transparent; border: 2px dashed #bdc3c7; color: #7f8c8d; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
         .btn-add:hover { border-color: #3498db; color: #3498db; background: #f0f8ff; }
         
@@ -200,7 +150,7 @@
         .btn-import:hover { background: #e67e22; }
         .btn-export { display: block; width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* --- PDF 打印适配 --- */
+        /* --- 6. PDF 打印适配 --- */
         @media print {
             body { background: #fff; padding: 0; }
             .container { box-shadow: none; max-width: 100%; padding: 0; }
