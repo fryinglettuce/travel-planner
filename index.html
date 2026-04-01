@@ -46,7 +46,7 @@
         .drag-handle { width: 30px; display: flex; align-items: center; justify-content: center; color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; }
         .drag-handle:active { cursor: grabbing; color: #3498db;}
 
-        /* --- 时间轴容器 --- */
+        /* --- 🌟 终极防偏移时间轴 (左侧锚定大法) --- */
         .time-col { 
             box-sizing: border-box; 
             width: 110px;           
@@ -58,49 +58,54 @@
             position: relative; 
         }
         
+        /* 1. 行程内部的连线：改为 left 绝对定位 */
         .time-col::before {
             content: '';
             position: absolute;
             top: 27px;       
             bottom: 27px; 
-            right: 4px;
+            left: 90px;  /* 🔥 核心修改：从 right 改为左侧强锚定 */
             z-index: 0;
-            border-right-width: 2px;
-            border-right-style: solid; 
+            border-left-width: 2px;
+            border-left-style: solid; 
         }
-        .event.sightseeing .time-col::before { border-right-color: #3498db; } 
-        .event.transit .time-col::before { border-right-color: #95a5a6; }   
+        .event.sightseeing .time-col::before { border-left-color: #3498db; } 
+        .event.transit .time-col::before { border-left-color: #95a5a6; }   
 
+        /* 2. 行程之间的连线：改为 left 绝对定位 */
         .time-col::after {
             content: '';
             position: absolute;
             top: calc(100% - 27px); 
             bottom: -47px;          
-            right: 4px;
+            left: 90px;  /* 🔥 核心修改：与上方线条保持绝对一致 */
             z-index: 0;
-            border-right: 2px dashed #333; 
+            border-left: 2px dashed #333; 
         }
         .event:last-child .time-col::after { display: none; }
 
+        /* 3. 时间输入框容器 */
         .time-input-container { 
             display: flex;
             align-items: center;
-            justify-content: flex-end; 
+            justify-content: flex-start; /* 改为靠左排布，不再受右边挤压影响 */
             position: relative; 
             z-index: 2; 
         }
         
+        /* 4. 时间节点小圆点：改为 absolute 绝对定位 */
         .time-input-container::after {
             content: '';
-            display: block;
+            position: absolute;
+            left: 86px;  /* 🔥 核心修改：数学级居中。圆点宽10px(从86到96)，中点为91。线宽2px(从90到92)，中点也是91。严丝合缝！ */
+            top: 50%;
+            transform: translateY(-50%);
             width: 10px;
             height: 10px;
             border-radius: 50%;
             background: #fff; 
             border: 2px solid #bdc3c7; 
             box-sizing: border-box;
-            flex-shrink: 0;
-            margin-left: 10px; 
         }
         .event.sightseeing .time-input-container::after { background: #3498db; border-color: #3498db; }
         
