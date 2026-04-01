@@ -43,63 +43,65 @@
         }
         .event.dragging { opacity: 0.4; border: 2px dashed #3498db; border-radius: 8px; }
 
-        /* 🔥 致命修复：加上 flex-shrink: 0，阻止拖拽手柄在手机端被随机压缩 */
-        .drag-handle { width: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; }
+        /* 1. 锁死拖拽手柄，赋予绝对不可压缩的刚性 */
+        .drag-handle { 
+            width: 30px; 
+            flex: 0 0 30px; /* 🔥 终极防线：禁止缩小 */
+            display: flex; align-items: center; justify-content: center; 
+            color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; 
+        }
         .drag-handle:active { cursor: grabbing; color: #3498db;}
 
-        /* --- 🌟 终极防偏移时间轴 (左侧锚定大法) --- */
+        /* 2. 重构时间容器：使用右侧大一统锚定 */
         .time-col { 
-            box-sizing: border-box; 
-            width: 110px; 
-            min-width: 110px;
-            flex-shrink: 0; 
-            padding: 15px 0; 
+            flex: 0 0 95px; /* 🔥 终极防线：锁死 95px 宽度，禁止任何挤压 */
+            width: 95px;           
+            padding: 15px 0; /* 移除横向 padding，把控制权交给内部 */
             display: flex; 
             flex-direction: column; 
             justify-content: space-between; 
             position: relative; 
         }
-        
-        /* 1. 行程内部的连线：改为 left 绝对定位 */
+
+        /* 线条永远死死贴在 time-col 的最右边缘 (right: 0) */
         .time-col::before {
             content: '';
             position: absolute;
             top: 27px;       
             bottom: 27px; 
-            left: 90px;  /* 🔥 核心修改：从 right 改为左侧强锚定 */
+            right: 0; 
             z-index: 0;
-            border-left-width: 2px;
-            border-left-style: solid; 
+            border-right: 2px solid; 
         }
-        .event.sightseeing .time-col::before { border-left-color: #3498db; } 
-        .event.transit .time-col::before { border-left-color: #95a5a6; }   
+        .event.sightseeing .time-col::before { border-right-color: #3498db; } 
+        .event.transit .time-col::before { border-right-color: #95a5a6; }   
 
-        /* 2. 行程之间的连线：改为 left 绝对定位 */
         .time-col::after {
             content: '';
             position: absolute;
             top: calc(100% - 27px); 
             bottom: -47px;          
-            left: 90px;  /* 🔥 核心修改：与上方线条保持绝对一致 */
+            right: 0;
             z-index: 0;
-            border-left: 2px dashed #333; 
+            border-right: 2px dashed #333; 
         }
         .event:last-child .time-col::after { display: none; }
 
-        /* 3. 时间输入框容器 */
+        /* 3. 时间输入框容器：负责留出右侧安全距离 */
         .time-input-container { 
             display: flex;
             align-items: center;
-            justify-content: flex-start; /* 改为靠左排布，不再受右边挤压影响 */
+            justify-content: flex-end; 
             position: relative; 
             z-index: 2; 
+            padding-right: 15px; /* 文字距离线的安全隔离带 */
         }
         
-        /* 4. 时间节点小圆点：改为 absolute 绝对定位 */
+        /* 圆点同样以右边缘为准进行绝对定位 */
         .time-input-container::after {
             content: '';
             position: absolute;
-            left: 86px;  /* 🔥 核心修改：数学级居中。圆点宽10px(从86到96)，中点为91。线宽2px(从90到92)，中点也是91。严丝合缝！ */
+            right: -4px; /* 🔥 精准数学计算：2px的线在右边缘，10px的圆点向右突出4px，两者完美同心重合！ */
             top: 50%;
             transform: translateY(-50%);
             width: 10px;
@@ -133,25 +135,10 @@
         .time-input:focus { background-color: #fff; box-shadow: 0 0 0 2px #3498db; }
         .time-input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; padding: 0; margin-left: 2px;}
 
-        /* --- 🌟 核心升级：双击编辑视觉反馈 --- */
-        .title, .desc, .tab-text { 
-            outline: none; 
-            transition: all 0.2s; 
-            cursor: pointer; 
-            min-height: 24px; /* 防止文本被清空后无法点击 */
-            min-width: 50px;
-        }
-        /* 单次悬浮时给出淡黄色暗示（告诉用户可以点） */
-        .title:hover, .desc:hover, .tab-text:hover { background-color: #fffacd; border-radius: 4px; box-shadow: 0 0 0 2px #ffe066; }
-        
-        /* 双击进入编辑模式后的强高亮样式 */
-        [contenteditable="true"] { 
-            background-color: #fff !important; 
-            box-shadow: 0 0 0 2px #3498db !important; 
-            border-radius: 4px; 
-            cursor: text !important; 
-        }
-        .tab-text[contenteditable="true"] { white-space: normal; overflow: visible; text-overflow: clip; position: relative; z-index: 20; }
+        /* --- 编辑交互样式 --- */
+        [contenteditable="true"] { outline: none; transition: background 0.2s; }
+        [contenteditable="true"]:hover { background-color: #fffacd; border-radius: 4px; box-shadow: 0 0 0 2px #ffe066; }
+        [contenteditable="true"]:focus { background-color: #fff; box-shadow: 0 0 0 2px #3498db; border-radius: 4px; }
         
         .desc a { color: #3498db; text-decoration: underline; cursor: pointer; }
         .desc img { max-width: 100%; height: auto; border-radius: 6px; margin-top: 10px; display: block; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
@@ -163,10 +150,10 @@
         .btn-ctrl:hover { background: #f0f0f0; }
         .btn-ctrl.delete:hover { background: #fee2e2; color: #ef4444; border-color: #f87171; }
 
-        /* --- 游览型 vs 交通型 --- */
+        /* 4. 彻底解决右侧文字撑爆左侧布局的 Bug */
         .event.sightseeing .content-col { 
-            flex-grow: 1; 
-            min-width: 0; /* 🔥 允许内部文本在极窄屏幕下换行压缩 */
+            flex: 1 1 0%; /* 允许弹性伸缩 */
+            min-width: 0; /* 🔥 核心防爆机制：允许元素缩得比长文字还小，从而强制文字换行 */
             background: #fff; 
             padding: 15px 15px 45px 20px; 
             border-radius: 8px; 
@@ -179,19 +166,29 @@
         .event.sightseeing .desc { margin: 0; font-size: 0.95rem; color: #555; line-height: 1.5; }
 
         .event.transit .content-col { 
-            flex-grow: 1; 
-            min-width: 0; /* 🔥 允许内部文本在极窄屏幕下换行压缩 */
+            flex: 1 1 0%; 
+            min-width: 0; /* 🔥 核心防爆机制 */
             background: #fafafa; 
             padding: 12px 15px 40px 15px; 
             border-radius: 8px; 
             border: 2px dashed #bdc3c7; 
             position: relative; 
             margin-left: 28px; 
-            transform: scale(0.98); 
-            transform-origin: left;
+            margin-right: 10px; /* 移除易导致错位的 scale，用 margin 控制视觉缩紧更稳 */
         }
         .event.transit .title { margin: 0; font-size: 1rem; font-weight: bold; color: #34495e; }
         .event.transit .desc { margin: 4px 0 0 0; font-size: 0.85rem; color: #7f8c8d; }
+
+        /* 5. 强制长文本自动换行，绝不撑开容器 */
+        .title, .desc, .tab-text { 
+            outline: none; 
+            transition: all 0.2s; 
+            cursor: pointer; 
+            min-height: 24px; 
+            min-width: 50px;
+            word-wrap: break-word;      /* 🔥 打破长字符结界 */
+            overflow-wrap: break-word;
+        }
 
         /* --- 底部按钮组 --- */
         .btn-add { display: block; width: 100%; padding: 15px; margin-top: 15px; background: transparent; border: 2px dashed #bdc3c7; color: #7f8c8d; border-radius: 8px; font-size: 1rem; cursor: pointer; transition: all 0.2s; }
