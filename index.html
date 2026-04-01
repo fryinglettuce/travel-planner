@@ -43,13 +43,15 @@
         }
         .event.dragging { opacity: 0.4; border: 2px dashed #3498db; border-radius: 8px; }
 
-        .drag-handle { width: 30px; display: flex; align-items: center; justify-content: center; color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; }
+        /* 🔥 致命修复：加上 flex-shrink: 0，阻止拖拽手柄在手机端被随机压缩 */
+        .drag-handle { width: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: #bdc3c7; cursor: grab; font-size: 1.2rem; user-select: none; }
         .drag-handle:active { cursor: grabbing; color: #3498db;}
 
         /* --- 🌟 终极防偏移时间轴 (左侧锚定大法) --- */
         .time-col { 
             box-sizing: border-box; 
-            width: 110px;           
+            width: 110px; 
+            min-width: 110px;
             flex-shrink: 0; 
             padding: 15px 0; 
             display: flex; 
@@ -164,6 +166,7 @@
         /* --- 游览型 vs 交通型 --- */
         .event.sightseeing .content-col { 
             flex-grow: 1; 
+            min-width: 0; /* 🔥 允许内部文本在极窄屏幕下换行压缩 */
             background: #fff; 
             padding: 15px 15px 45px 20px; 
             border-radius: 8px; 
@@ -177,6 +180,7 @@
 
         .event.transit .content-col { 
             flex-grow: 1; 
+            min-width: 0; /* 🔥 允许内部文本在极窄屏幕下换行压缩 */
             background: #fafafa; 
             padding: 12px 15px 40px 15px; 
             border-radius: 8px; 
